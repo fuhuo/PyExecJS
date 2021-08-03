@@ -96,12 +96,16 @@ class ExternalRuntime(AbstractRuntime):
 
             p = None
             try:
+                # print(cmd)
                 p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=self._cwd, universal_newlines=True)
                 input = self._compile(source)
                 if six.PY2:
                     input = input.encode(sys.getfilesystemencoding())
+                # print(input)
+                input = ''.join(input.splitlines()) if 'deno' in cmd[0] else input
                 stdoutdata, stderrdata = p.communicate(input=input)
                 ret = p.wait()
+                # print('stdout:', stdoutdata)
             finally:
                 del p
 
@@ -154,8 +158,9 @@ class ExternalRuntime(AbstractRuntime):
 
         def _extract_result(self, output):
             output = output.replace("\r\n", "\n").replace("\r", "\n")
-            output_last_line = output.split("\n")[-2]
-
+            # print('outout:', output)
+            output_last_line = [line for line in output.splitlines() if ']' in line][-1]
+            # print(repr(output_last_line))
             ret = json.loads(output_last_line)
             if len(ret) == 1:
                 ret = [ret[0], None]
@@ -236,6 +241,15 @@ def node_nodejs():
         command=['nodejs'],
         encoding='UTF-8',
         runner_source=_runner_sources.Node
+    )
+
+
+def deno():
+    return ExternalRuntime(
+        name="deno",
+        command=['deno'],
+        encoding='UTF-8',
+        runner_source=_runner_sources.Deno
     )
 
 

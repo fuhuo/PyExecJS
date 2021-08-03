@@ -66,6 +66,7 @@ _runtimes = []
 
 register(runtime_names.PyV8,           pyv8runtime.PyV8Runtime())
 register(runtime_names.Node,           external_runtime.node())
+register(runtime_names.Deno,           external_runtime.deno())
 register(runtime_names.JavaScriptCore, external_runtime.jsc())
 register(runtime_names.SpiderMonkey,   external_runtime.spidermonkey())
 register(runtime_names.JScript,        external_runtime.jscript())
