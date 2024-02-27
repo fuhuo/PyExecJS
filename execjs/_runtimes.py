@@ -21,6 +21,11 @@ def get(name=None):
         return get_from_environment() or _find_available_runtime()
     return _find_runtime_by_name(name)
 
+def session(name=None):
+    if name is None:
+        return get_from_environment() or _find_available_runtime()
+    _find_runtime_by_name(name).session()
+    return _find_runtime_by_name(name)
 
 def runtimes():
     """return a dictionary of all supported JavaScript runtimes."""
@@ -73,3 +78,4 @@ register(runtime_names.JScript,        external_runtime.jscript())
 register(runtime_names.PhantomJS,      external_runtime.phantomjs())
 register(runtime_names.SlimerJS,       external_runtime.slimerjs())
 register(runtime_names.Nashorn,        external_runtime.nashorn())
+register(runtime_names.Llrt,           external_runtime.llrt())

@@ -43,6 +43,7 @@ __all__ = """
 
 register = execjs._runtimes.register
 get = execjs._runtimes.get
+session = execjs._runtimes.session
 runtimes = execjs._runtimes.runtimes
 get_from_environment = execjs._runtimes.get_from_environment
 

@@ -9,6 +9,10 @@ import stat
 import sys
 import tempfile
 import six
+if platform.system() == 'Windows':
+    import wexpect as pyexpect
+else: 
+    import pexpect as pyexpect
 import execjs._json2 as _json2
 import execjs._runner_sources as _runner_sources
 
@@ -24,7 +28,7 @@ from execjs._misc import encode_unicode_codepoints
 
 class ExternalRuntime(AbstractRuntime):
     '''Runtime to execute codes with external command.'''
-    def __init__(self, name, command, runner_source, encoding='utf8', tempfile=False):
+    def __init__(self, name, command, runner_source, encoding='utf8', tempfile=False, prompt='> '):
         self._name = name
         if isinstance(command, str):
             command = [command]
@@ -32,6 +36,8 @@ class ExternalRuntime(AbstractRuntime):
         self._runner_source = runner_source
         self._encoding = encoding
         self._tempfile = tempfile
+        self._session = None
+        self._prompt = prompt
 
         self._available = self._binary() is not None
 
@@ -48,8 +54,15 @@ class ExternalRuntime(AbstractRuntime):
     def is_available(self):
         return self._available
 
+    def session(self):
+        cmd = self._binary()
+        self._session = pyexpect.spawn(cmd)
+        self._session.expect(self._prompt)
+        self._session.delaybeforesend = None
+        return self._session
+
     def _compile(self, source, cwd=None):
-        return self.Context(self, source, cwd=cwd, tempfile=self._tempfile)
+        return self.Context(self, source, cwd=cwd, tempfile=self._tempfile, session=self._session)
 
     def _binary(self):
         if not hasattr(self, "_binary_cache"):
@@ -59,11 +72,12 @@ class ExternalRuntime(AbstractRuntime):
     class Context(AbstractRuntimeContext):
         # protected
 
-        def __init__(self, runtime, source='', cwd=None, tempfile=False):
+        def __init__(self, runtime, source='', cwd=None, tempfile=False, session=False):
             self._runtime = runtime
             self._source = source
             self._cwd = cwd
             self._tempfile = tempfile
+            self._session = session
 
         def is_available(self):
             return self._runtime.is_available()
@@ -83,6 +97,8 @@ class ExternalRuntime(AbstractRuntime):
 
             if self._tempfile:
                 output = self._exec_with_tempfile(source)
+            elif self._session:
+                output = self._exec_with_session(source)
             else:
                 output = self._exec_with_pipe(source)
             return self._extract_result(output)
@@ -90,6 +106,14 @@ class ExternalRuntime(AbstractRuntime):
         def _call(self, identifier, *args):
             args = json.dumps(args)
             return self._eval("{identifier}.apply(this, {args})".format(identifier=identifier, args=args))
+
+        def _exec_with_session(self, source):
+            input = self._compile(source)
+            end_str = '//!!@@##'
+            self._session.sendline(input + '\n' + end_str)
+            self._session.expect(end_str)
+            stdoutdata = self._session.before if platform.system() == 'Windows' else self._session.before.decode()
+            return stdoutdata
 
         def _exec_with_pipe(self, source):
             cmd = self._runtime._binary()
@@ -231,7 +255,8 @@ def node_node():
         name="Node.js (V8)",
         command=['node'],
         encoding='UTF-8',
-        runner_source=_runner_sources.Node
+        runner_source=_runner_sources.Node,
+        prompt='> '
     )
 
 
@@ -240,16 +265,18 @@ def node_nodejs():
         name="Node.js (V8)",
         command=['nodejs'],
         encoding='UTF-8',
-        runner_source=_runner_sources.Node
+        runner_source=_runner_sources.Node,
+        prompt='> '
     )
 
 
 def deno():
     return ExternalRuntime(
-        name="deno",
+        name="Deno",
         command=['deno'],
         encoding='UTF-8',
-        runner_source=_runner_sources.Deno
+        runner_source=_runner_sources.Deno,
+        prompt='> '
     )
 
 
@@ -304,5 +331,15 @@ def nashorn():
         name="Nashorn",
         command=["jjs"],
         runner_source=_runner_sources.Nashorn,
+        tempfile=True
+    )
+
+
+def llrt():
+    return ExternalRuntime(
+        name="Llrt",
+        command=['llrt'],
+        encoding='UTF-8',
+        runner_source=_runner_sources.Llrt,
         tempfile=True
     )

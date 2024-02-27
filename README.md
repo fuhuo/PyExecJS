@@ -38,6 +38,7 @@ A short example:
 * [PhantomJS](http://phantomjs.org/)
 * [Nashorn](http://docs.oracle.com/javase/8/docs/technotes/guides/scripting/nashorn/intro.html#sthref16) - Included with Oracle Java 8
 * [Deno](https://github.com/denoland/deno)
+* [Llrt](https://github.com/awslabs/llrt)
 
 ## Second-class support (runtime class is privided but not tested)
 
@@ -93,6 +94,9 @@ Copyright (c) 2011 Sam Stephenson and Josh Peek. (As a author of ExecJS)
 Released under the MIT license. See `LICENSE` for details.
 
 # Changelog
+
+## 1.5.3
+- Supported Llrt as runtime
 
 ## 1.5.2
 - Supported Deno as runtime
